@@ -1,23 +1,28 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException, Depends
 from database import events_collection
-from models.event import Event
+from models import Event
+from typing import List
 
-router = APIRouter(
-    prefix="/api/events",
-    tags=["Events"]
-)
+router = APIRouter(prefix="/api/events", tags=["Events"])
 
-# GET all events
-@router.get("/")
-async def get_events():
+# --- PUBLIC ROUTE: Get All Events ---
+@router.get("/", response_model=List[Event])
+async def get_all_events():
     events = []
-    async for e in events_collection.find():
-        e["_id"] = str(e["_id"])
-        events.append(e)
+    async for event in events_collection.find():
+        # Remove MongoDB _id, keep internal event_id
+        if "_id" in event: 
+            del event["_id"] 
+        events.append(event)
     return events
 
-# CREATE new event
+# --- ADMIN ROUTE: Create Event ---
 @router.post("/")
 async def create_event(event: Event):
+    # Check if event_id already exists
+    existing = await events_collection.find_one({"event_id": event.event_id})
+    if existing:
+        raise HTTPException(400, "Event ID already exists")
+
     await events_collection.insert_one(event.dict())
-    return {"message": "Event created successfully"}
+    return {"message": f"Event '{event.event_name}' created successfully"}

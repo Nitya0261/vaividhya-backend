@@ -12,4 +12,3 @@ db = client["vaividhya_db"]
 events_collection = db["events"]
 registrations_collection = db["registrations"]
 admins_collection = db["admins"]
-

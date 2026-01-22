@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from routes import events, registrations, admin
+from routes import events, registrations
 from database import events_collection
 
 # ===================== APP =====================
@@ -22,7 +22,6 @@ app.add_middleware(
 # ===================== ROUTES =====================
 app.include_router(events.router)
 app.include_router(registrations.router)
-app.include_router(admin.router)
 
 # ===================== HEALTH CHECK =====================
 @app.get("/")
