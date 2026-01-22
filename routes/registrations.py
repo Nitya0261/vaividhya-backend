@@ -66,6 +66,10 @@ async def update_user_events(user_id: str, selection: EventSelection):
     # 3. Calculate Total Amount
     total_amount = sum(e["price"] for e in found_events)
 
+    # 🎯 Apply bundle discount: 3 events for 120
+    if len(found_events) == 3 and total_amount == 150:
+        total_amount = 120
+
     # 4. Update the User Document
     # We store the list of event IDs (selection.event_ids) and the calculated total
     await registrations_collection.update_one(
@@ -123,3 +127,21 @@ async def mark_as_paid(user_id: str):
         raise HTTPException(404, "User not found")
 
     return {"message": "Payment status updated to PAID"}
+
+# ==========================================
+# 4. ADMIN: MARK AS PAID
+# ==========================================
+@router.patch("/{user_id}/mark-unpaid")
+async def mark_as_paid(user_id: str):
+    if not ObjectId.is_valid(user_id):
+        raise HTTPException(400, "Invalid User ID")
+
+    result = await registrations_collection.update_one(
+        {"_id": ObjectId(user_id)},
+        {"$set": {"payment_status": "PENDING"}}
+    )
+
+    if result.matched_count == 0:
+        raise HTTPException(404, "User not found")
+
+    return {"message": "Payment status updated to PENDING"}

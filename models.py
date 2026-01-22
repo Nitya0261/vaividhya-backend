@@ -6,6 +6,7 @@ class Event(BaseModel):
     event_id: str
     event_name: str
     price: int
+    category: str
     description: Optional[str] = None
     max_participants: Optional[int] = None
 
