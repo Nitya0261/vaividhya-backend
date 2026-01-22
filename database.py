@@ -1,10 +1,14 @@
 from motor.motor_asyncio import AsyncIOMotorClient
+import os
 
-MONGO_URL = "mongodb+srv://vaividhya2k26:vaividhya1234@cluster0.j2coack.mongodb.net/"
+MONGO_URI = os.getenv("MONGO_URI")
 
-client = AsyncIOMotorClient(MONGO_URL)
-db = client.vividhya_db
+if not MONGO_URI:
+    raise RuntimeError("MONGO_URI environment variable is not set")
 
-events_collection = db.events
-registrations_collection = db.registrations
-admins_collection = db.admins
+client = AsyncIOMotorClient(MONGO_URI)
+db = client["vaividhya_db"]
+
+events_collection = db["events"]
+registrations_collection = db["registrations"]
+admins_collection = db["admins"]
