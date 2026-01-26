@@ -1,5 +1,5 @@
 from fastapi import APIRouter, HTTPException, Depends
-from database import events_collection
+from database import events_collection, registrations_collection
 from models import Event
 from typing import List
 
@@ -26,3 +26,21 @@ async def create_event(event: Event):
 
     await events_collection.insert_one(event.dict())
     return {"message": f"Event '{event.event_name}' created successfully"}
+
+@router.get("/squid-game/status")
+async def get_squid_game_status():
+    event = await events_collection.find_one({"event_id": "squid-game"})
+    if not event:
+        raise HTTPException(404, "Event not found")
+
+    current_count = await registrations_collection.count_documents({
+        "selected_events": "squid-game"
+    })
+
+    return {
+        "event_id": "squid-game",
+        "current_participants": current_count,
+        "max_participants": event["max_participants"],
+        "slots_left": event["max_participants"] - current_count,
+        "is_full": current_count >= event["max_participants"]
+    }

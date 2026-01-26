@@ -53,6 +53,26 @@ async def update_user_events(user_id: str, selection: EventSelection):
     user = await registrations_collection.find_one({"_id": ObjectId(user_id)})
     if not user:
         raise HTTPException(404, "User not found")
+    
+    selected_ids = selection.event_ids.copy()
+
+    # 🦑 SPECIAL CHECK FOR SQUID GAME
+    if "squid-game" in selected_ids:
+
+        squid_event = await events_collection.find_one({"event_id": "squid-game"})
+        if not squid_event:
+            raise HTTPException(400, "Squid Game event not found")
+
+        max_participants = squid_event["max_participants"]
+
+        current_count = await registrations_collection.count_documents({
+            "selected_events": "squid-game"
+        })
+
+        # 🚫 If full → remove from selection
+        if current_count >= max_participants:
+            selected_ids.remove("squid-game")
+
 
     # 1. Fetch Event Objects from DB
     # We need to query the events collection to get the price of each selected event
@@ -60,7 +80,7 @@ async def update_user_events(user_id: str, selection: EventSelection):
     found_events = await events_cursor.to_list(length=3)
 
     # 2. Validate that all provided Event IDs actually exist in the DB
-    if len(found_events) != len(selection.event_ids):
+    if len(found_events) != len(selected_ids):
         raise HTTPException(400, "One or more Event IDs are invalid or do not exist")
 
     # 3. Calculate Total Amount
