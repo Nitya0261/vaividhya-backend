@@ -29,7 +29,7 @@ async def create_event(event: Event):
 
 @router.get("/web-treasure-hunt/status")
 async def get_squid_game_status():
-    event = await events_collection.find_one({"event_id": "squid-game"})
+    event = await events_collection.find_one({"event_id": "web-treasure-hunt"})
     if not event:
         raise HTTPException(404, "Event not found")
 
