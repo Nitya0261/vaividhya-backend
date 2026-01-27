@@ -56,22 +56,22 @@ async def update_user_events(user_id: str, selection: EventSelection):
     
     selected_ids = selection.event_ids.copy()
 
-    # 🦑 SPECIAL CHECK FOR SQUID GAME
-    if "squid-game" in selected_ids:
+    # 🦑 SPECIAL CHECK FOR WEB TREASURE HUNT
+    if "web-treasure-hunt" in selected_ids:
 
-        squid_event = await events_collection.find_one({"event_id": "squid-game"})
-        if not squid_event:
-            raise HTTPException(400, "Squid Game event not found")
+        web_treasure_hunt_event = await events_collection.find_one({"event_id": "web-treasure-hunt"})
+        if not web_treasure_hunt_event:
+            raise HTTPException(400, "Web Treasure Hunt event not found")
 
-        max_participants = squid_event["max_participants"]
+        max_participants = web_treasure_hunt_event["max_participants"]
 
         current_count = await registrations_collection.count_documents({
-            "selected_events": "squid-game"
+            "selected_events": "web-treasure-hunt"
         })
 
         # 🚫 If full → remove from selection
         if current_count >= max_participants:
-            selected_ids.remove("squid-game")
+            selected_ids.remove("web-treasure-hunt")
 
 
     # 1. Fetch Event Objects from DB

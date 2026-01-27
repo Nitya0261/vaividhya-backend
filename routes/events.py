@@ -27,18 +27,18 @@ async def create_event(event: Event):
     await events_collection.insert_one(event.dict())
     return {"message": f"Event '{event.event_name}' created successfully"}
 
-@router.get("/squid-game/status")
+@router.get("/web-treasure-hunt/status")
 async def get_squid_game_status():
     event = await events_collection.find_one({"event_id": "squid-game"})
     if not event:
         raise HTTPException(404, "Event not found")
 
     current_count = await registrations_collection.count_documents({
-        "selected_events": "squid-game"
+        "selected_events": "web-treasure-hunt"
     })
 
     return {
-        "event_id": "squid-game",
+        "event_id": "web-treasure-hunt",
         "current_participants": current_count,
         "max_participants": event["max_participants"],
         "slots_left": event["max_participants"] - current_count,
