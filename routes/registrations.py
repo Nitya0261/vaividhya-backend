@@ -66,7 +66,8 @@ async def update_user_events(user_id: str, selection: EventSelection):
         max_participants = web_treasure_hunt_event["max_participants"]
 
         current_count = await registrations_collection.count_documents({
-            "selected_events": "web-treasure-hunt"
+            "selected_events": "web-treasure-hunt",
+            "payment_status": "PAID"
         })
 
         # 🚫 If full → remove from selection

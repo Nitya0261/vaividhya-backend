@@ -34,7 +34,8 @@ async def get_squid_game_status():
         raise HTTPException(404, "Event not found")
 
     current_count = await registrations_collection.count_documents({
-        "selected_events": "web-treasure-hunt"
+        "selected_events": "web-treasure-hunt",
+        "payment_status": "PAID"
     })
 
     return {
