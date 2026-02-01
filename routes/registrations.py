@@ -41,72 +41,64 @@ async def register_user_step1(data: RegistrationBase):
 # ==========================================
 @router.put("/{user_id}/events")
 async def update_user_events(user_id: str, selection: EventSelection):
-    # Constraint: Maximum 5 Events
+
+    # Max 5 events
     if len(selection.event_ids) > 5:
         raise HTTPException(400, "You can only select up to 5 events.")
 
-    # Validate MongoDB ObjectId
     if not ObjectId.is_valid(user_id):
         raise HTTPException(400, "Invalid User ID format")
 
-    # Check if user exists
     user = await registrations_collection.find_one({"_id": ObjectId(user_id)})
     if not user:
         raise HTTPException(404, "User not found")
-    if user.payment_status == "PAID":
-        raise HTTPException(400, "User Already PAID")
-    
+
+    if user.get("payment_status") == "PAID":
+        raise HTTPException(400, "User already PAID")
+
     selected_ids = selection.event_ids.copy()
 
-    # 🦑 SPECIAL CHECK FOR WEB TREASURE HUNT
+    # 🦑 Web Treasure Hunt capacity check
     if "web-treasure-hunt" in selected_ids:
-
-        web_treasure_hunt_event = await events_collection.find_one({"event_id": "web-treasure-hunt"})
-        if not web_treasure_hunt_event:
+        event = await events_collection.find_one({"event_id": "web-treasure-hunt"})
+        if not event:
             raise HTTPException(400, "Web Treasure Hunt event not found")
-
-        max_participants = web_treasure_hunt_event["max_participants"]
 
         current_count = await registrations_collection.count_documents({
             "selected_events": "web-treasure-hunt",
             "payment_status": "PAID"
         })
 
-        # 🚫 If full → remove from selection
-        if current_count >= max_participants:
+        if current_count >= event["max_participants"]:
             selected_ids.remove("web-treasure-hunt")
 
+    # Fetch events using FINAL selected_ids
+    events_cursor = events_collection.find({
+        "event_id": {"$in": selected_ids}
+    })
+    found_events = await events_cursor.to_list(length=len(selected_ids))
 
-    # 1. Fetch Event Objects from DB
-    # We need to query the events collection to get the price of each selected event
-    events_cursor = events_collection.find({"event_id": {"$in": selection.event_ids}})
-    found_events = await events_cursor.to_list(length=3)
-
-    # 2. Validate that all provided Event IDs actually exist in the DB
     if len(found_events) != len(selected_ids):
-        raise HTTPException(400, "One or more Event IDs are invalid or do not exist")
+        raise HTTPException(400, "One or more Event IDs are invalid")
 
-    # 3. Calculate Total Amount
     total_amount = sum(e["price"] for e in found_events)
 
-    # 🎯 Apply bundle discount: 3 events for 120
+    # Discount logic
     if len(found_events) >= 3:
         total_amount -= 30
 
-    # 4. Update the User Document
-    # We store the list of event IDs (selection.event_ids) and the calculated total
     await registrations_collection.update_one(
         {"_id": ObjectId(user_id)},
         {"$set": {
-            "selected_events": selection.event_ids, # Stores ["E1", "E2"]
+            "selected_events": selected_ids,
             "total_amount": total_amount
         }}
     )
 
     return {
-        "message": "Events updated successfully", 
-        "total_amount": total_amount, 
-        "selected_ids": selection.event_ids
+        "message": "Events updated successfully",
+        "total_amount": total_amount,
+        "selected_ids": selected_ids
     }
 
 # ==========================================
