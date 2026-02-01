@@ -119,7 +119,7 @@ async def get_user_detail(user_id: str):
         event_details = await events_collection.find(
             {"event_id": {"$in": user["selected_events"]}},
             {"_id": 0}
-        ).to_list(length=3)
+        ).to_list(length=5)
         user["event_details"] = event_details
         
     user["_id"] = str(user["_id"])
