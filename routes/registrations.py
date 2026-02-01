@@ -41,9 +41,9 @@ async def register_user_step1(data: RegistrationBase):
 # ==========================================
 @router.put("/{user_id}/events")
 async def update_user_events(user_id: str, selection: EventSelection):
-    # Constraint: Maximum 3 Events
-    if len(selection.event_ids) > 3:
-        raise HTTPException(400, "You can only select up to 3 events.")
+    # Constraint: Maximum 5 Events
+    if len(selection.event_ids) > 5:
+        raise HTTPException(400, "You can only select up to 5 events.")
 
     # Validate MongoDB ObjectId
     if not ObjectId.is_valid(user_id):
@@ -53,6 +53,8 @@ async def update_user_events(user_id: str, selection: EventSelection):
     user = await registrations_collection.find_one({"_id": ObjectId(user_id)})
     if not user:
         raise HTTPException(404, "User not found")
+    if user.payment_status == "PAID":
+        raise HTTPException(400, "User Already PAID")
     
     selected_ids = selection.event_ids.copy()
 
@@ -88,8 +90,8 @@ async def update_user_events(user_id: str, selection: EventSelection):
     total_amount = sum(e["price"] for e in found_events)
 
     # 🎯 Apply bundle discount: 3 events for 120
-    if len(found_events) == 3 and total_amount == 150:
-        total_amount = 120
+    if len(found_events) >= 3:
+        total_amount -= 30
 
     # 4. Update the User Document
     # We store the list of event IDs (selection.event_ids) and the calculated total
