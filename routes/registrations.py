@@ -84,7 +84,7 @@ async def update_user_events(user_id: str, selection: EventSelection):
     total_amount = sum(e["price"] for e in found_events)
 
     # Discount logic
-    if len(found_events) >= 3:
+    if len(found_events) >= 3 and total_amount >= 150:
         total_amount -= 30
 
     await registrations_collection.update_one(
